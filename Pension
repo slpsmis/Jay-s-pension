@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>退休倒數計時器</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --card-bg: #f8f9fa;
+            --text-main: #212529;
+            --accent-blue: #0056b3;
+            --money-green: #28a745;
+            --border-color: #dee2e6;
+        }
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            padding: 30px 0;
+            margin: 0;
+        }
+        .container {
+            width: 95%;
+            max-width: 800px;
+        }
+        h1 {
+            text-align: center;
+            color: var(--text-main);
+            font-size: 2.5rem; /* 加大標題 */
+            margin-bottom: 40px;
+            font-weight: 900;
+        }
+        .deadline-item {
+            background: var(--card-bg);
+            margin-bottom: 25px;
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+        .info-group { display: flex; flex-direction: column; }
+        .date-label { font-size: 1.5rem; font-weight: bold; color: #000; }
+        .age-label { color: var(--accent-blue); font-size: 1.2rem; margin-top: 5px; font-weight: bold; }
+        
+        .money-tag {
+            background: var(--money-green);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-size: 1.6rem; /* 加大金額 */
+            font-weight: 900;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+        .timer-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            text-align: center;
+        }
+        .time-box {
+            background: #fff;
+            padding: 15px 5px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .num {
+            display: block;
+            font-family: 'Courier New', monospace;
+            font-size: 2.2rem; /* 加大數字 */
+            font-weight: 900;
+            color: #d9534f; /* 顯眼的紅色數字 */
+        }
+        .unit { font-size: 1rem; color: #6c757d; font-weight: bold; }
+        .expired { font-size: 1.5rem; color: #adb5bd; text-align: center; width: 100%; font-weight: bold; }
+        
+        /* 手機版微調 */
+        @media (max-width: 600px) {
+            .timer-grid { grid-template-columns: repeat(3, 1fr); }
+            .money-tag { font-size: 1.2rem; }
+            .num { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚀 廖介宏退休倒數儀表板</h1>
+    <div id="countdown-list"></div>
+</div>
+
+<script>
+    const deadlines = [
+        { label: "第一階段", date: "2033-02-01T00:00:00", age: "53歲", money: "49,000" },
+        { label: "第二階段", date: "2033-07-31T23:59:59", age: "53.5歲", money: "51,533" },
+        { label: "第三階段", date: "2034-02-01T00:00:00", age: "54歲", money: "54,105" },
+        { label: "第四階段", date: "2034-08-01T00:00:00", age: "54.5歲", money: "56,748" },
+        { label: "最終目標", date: "2035-02-01T00:00:00", age: "55歲", money: "59,424" }
+    ];
+
+    function getDetailedDiff(targetDate) {
+        const now = new Date();
+        const target = new Date(targetDate);
+        if (target - now <= 0) return null;
+
+        let years = target.getFullYear() - now.getFullYear();
+        let tempDate = new Date(now);
+        tempDate.setFullYear(now.getFullYear() + years);
+        
+        if (tempDate > target) {
+            years--;
+            tempDate = new Date(now);
+            tempDate.setFullYear(now.getFullYear() + years);
+        }
+
+        const remainMs = target - tempDate;
+        const days = Math.floor(remainMs / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((remainMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const mins = Math.floor((remainMs % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((remainMs % (1000 * 60)) / 1000);
+
+        return { years, days, hours, mins, secs };
+    }
+
+    function update() {
+        const list = document.getElementById('countdown-list');
+        let html = '';
+
+        deadlines.forEach(item => {
+            const diff = getDetailedDiff(item.date);
+            
+            let timerHtml = '';
+            if (diff) {
+                timerHtml = `
+                    <div class="timer-grid">
+                        <div class="time-box"><span class="num">${diff.years}</span><span class="unit">年</span></div>
+                        <div class="time-box"><span class="num">${diff.days}</span><span class="unit">天</span></div>
+                        <div class="time-box"><span class="num">${String(diff.hours).padStart(2,'0')}</span><span class="unit">時</span></div>
+                        <div class="time-box"><span class="num">${String(diff.mins).padStart(2,'0')}</span><span class="unit">分</span></div>
+                        <div class="time-box"><span class="num">${String(diff.secs).padStart(2,'0')}</span><span class="unit">秒</span></div>
+                    </div>`;
+            } else {
+                timerHtml = `<div class="expired">已達成階段目標 🎊</div>`;
+            }
+
+            html += `
+                <div class="deadline-item">
+                    <div class="header-row">
+                        <div class="info-group">
+                            <span class="date-label">${item.label} (${item.date.split('T')[0]})</span>
+                            <span class="age-label">${item.age} 達成</span>
+                        </div>
+                        <div class="money-tag">NT$ ${item.money}</div>
+                    </div>
+                    ${timerHtml}
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+    }
+
+    setInterval(update, 1000);
+    update();
+</script>
+
+</body>
+</html>
